@@ -113,6 +113,8 @@ pub struct HudPart {
     pub size: Vec2,
     /// The canvas point at the middle of its picture.
     pub view: Vec2,
+    /// Its picture's pixels a canvas pixel (1: as the game drew it; more, a sharper picture of a small canvas).
+    pub resolution: f32,
     /// Nothing to show now (hidden).
     pub empty: bool,
     pub placement: Placement,
