@@ -14,10 +14,15 @@
 //! - [`Mode`]: the kinds of game.
 //! - [`TouchState`]: the controllers, as the runtime reads them; [`PadHeld`]: whether the runtime has them. Each
 //!   engine maps them to its own game's pad, and lists what does what as [`Control`]s.
+//! - [`stage`]: what the game is played on ([`Stage`]), whether the engine took it ([`Applied`]), and putting the player
+//!   on it ([`PlacePlayer`]); it also says the one space and unit everything here is in.
 //! - [`Focus`]: where the player is, for the runtime to follow.
 //! - [`hud`]: an engine's HUD as draw lists, its parts and where the runtime puts them.
 pub mod hud;
 pub mod skate;
+pub mod stage;
+
+pub use stage::{Applied, Frame, PlacePlayer, Solid, Stage};
 
 pub use glam;
 use glam::Vec3;
@@ -95,14 +100,17 @@ impl Control {
     }
 }
 
-/// Where the player is in the room and how big it's drawn: what the runtime follows (what's placed at the player, and
-/// later its contact shadow, its sounds, the menus' distance checks). In the runtime's world units (the room's frame).
+/// Where the player is in the room, which way it faces and how big it's drawn: what the runtime follows (what's placed
+/// at the player, its sounds, the menus' distance checks, carrying the player over to another engine). In the
+/// runtime's world space ([`stage`]).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Focus {
     /// The point it stands on.
     pub feet: Vec3,
     /// Its up (a unit vector): along it from `feet` to the top of it.
     pub up: Vec3,
+    /// Where it faces (a unit vector).
+    pub forward: Vec3,
     /// How tall it is drawn, world units.
     pub height: f32,
 }
@@ -138,7 +146,7 @@ mod tests {
 
     #[test]
     fn a_focus_middle_is_halfway_up() {
-        let focus = Focus { feet: Vec3::new(1.0, 0.0, 2.0), up: Vec3::Y, height: 1.8 };
+        let focus = Focus { feet: Vec3::new(1.0, 0.0, 2.0), up: Vec3::Y, forward: Vec3::Z, height: 1.8 };
         assert_eq!(focus.middle(), Vec3::new(1.0, 0.9, 2.0));
     }
 

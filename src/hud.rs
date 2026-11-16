@@ -90,8 +90,20 @@ pub enum Placement {
     },
     /// At the player in the room (its [`crate::Focus`]), turned to the eyes: above them or beside them. As wide as
     /// `width_per_height` of the player's drawn height, and never narrower than `least_view_share` of its distance
-    /// from the eyes (so it reads from across the room).
-    AtPlayer { side: Side, width_per_height: f32, least_view_share: f32 },
+    /// from the player's `middle` to the eyes (so it reads from across the room).
+    AtPlayer {
+        side: Side,
+        width_per_height: f32,
+        least_view_share: f32,
+        /// The player's middle, a share of its drawn height up from its feet: what [`Side::Beside`] is beside, and
+        /// where the distance to the eyes is measured from.
+        middle: f32,
+        /// How far the picture's middle is clear of the player: a share of the player's drawn height plus a share of
+        /// the picture's width (over the top of its head for [`Side::Above`], to the side of its middle for
+        /// [`Side::Beside`]). For a picture whose drawing doesn't fill it (an arc a third of its height), the shares
+        /// that put the drawing just clear.
+        clear: (f32, f32),
+    },
 }
 
 /// Which side of the player an [`Placement::AtPlayer`] part is.

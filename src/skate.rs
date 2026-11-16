@@ -1,5 +1,120 @@
 //! The skate mode ([`Mode::Skate`](crate::Mode::Skate)): what a skating engine adds to the core.
 //!
-//! Empty for now. It fills in as the runtime's steps move skating out of the app (see the runtime's
-//! `docs/game-code-out-plan.md`): the park's rails and edges over the core stage, the skater's rider and board,
-//! trick text and skating events. Skating words and ideas belong here, never in the core.
+//! - [`SkatePark`]: the skating annotations over the core [`Stage`](crate::Stage): what's grindable, and which of a
+//!   placed piece's faces are a rail's tube.
+//! - [`SkaterLink`]: the rider and the board, each its own frame (they part: walking, bails, a board left behind);
+//!   [`SkaterLink::focus`] is skating's mapping onto the core [`Focus`].
+//! - [`TrickText`]: the trick being done and its points, for the runtime's plain readout when the engine draws no HUD.
+//!
+//! Placing the skater is the core's [`PlacePlayer`](crate::PlacePlayer): a skating engine puts it on its board there.
+//!
+//! Everything is in the core's one space and unit ([`crate::stage`]). Skating words and ideas belong here, never in
+//! the core; more arrives as the runtime's steps move skating out of the app (its `docs/game-code-out-plan.md`).
+use crate::{Focus, Frame};
+use glam::Vec3;
+use std::ops::Range;
+
+/// How tall a skater is at life size, metres.
+pub const SKATER_HEIGHT: f32 = 1.8;
+
+/// What's skated on the [`Stage`](crate::Stage) of the same `revision` beyond its solid faces. A skating engine is
+/// given the park first (it keeps it) and then the stage, and takes the two together.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SkatePark {
+    /// The stage's it annotates.
+    pub revision: u64,
+    /// The room's grindable edges (furniture and table tops: ledges).
+    pub room_edges: Vec<(Vec3, Vec3)>,
+    /// The placed pieces' annotations, each of a solid of the stage (in the stage's order).
+    pub pieces: Vec<ParkPiece>,
+    /// Every grind rail as a polyline: the room's edges (two points each), then the pieces' rails, ledges and
+    /// copings.
+    pub rails: Vec<Vec<Vec3>>,
+}
+
+/// A placed piece's skating: which of its solid's quads are a rail's tube, and its grindable edges.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ParkPiece {
+    /// Its [`Solid`](crate::Solid)'s id.
+    pub solid: u64,
+    /// Its solid's quads that are a grind tube's faces (convex rail collision, metal); the rest are its body.
+    pub rail_quads: Range<usize>,
+    /// Its grindable edges (a box's or ledge's top edges).
+    pub edges: Vec<(Vec3, Vec3)>,
+}
+
+impl SkatePark {
+    /// The annotations of the stage's solid `id`.
+    pub fn piece(&self, solid: u64) -> Option<&ParkPiece> {
+        self.pieces.iter().find(|p| p.solid == solid)
+    }
+}
+
+/// Where the skater is.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct SkaterLink {
+    /// The rider: at its feet, facing where it faces.
+    pub rider: Option<Frame>,
+    /// The board: its deck's middle, its nose forward.
+    pub board: Option<Frame>,
+    /// The rider is on the board.
+    pub on_board: bool,
+    /// On a grind: the engine keeps its rails until it ends (it takes a new stage after).
+    pub grinding: bool,
+    /// How big the skater is drawn against life size (a game's world bigger than the room draws it smaller); 0:
+    /// life size.
+    pub size: f32,
+}
+
+impl SkaterLink {
+    /// The skater's size against life size (1 unless the engine says otherwise).
+    pub fn size(&self) -> f32 {
+        if self.size > 0.0 { self.size } else { 1.0 }
+    }
+
+    /// The skater as the core's [`Focus`]: the rider, or the board when there's no rider; as tall as a skater at its
+    /// size.
+    pub fn focus(&self) -> Option<Focus> {
+        let at = self.rider.or(self.board)?;
+        Some(Focus { feet: at.position, up: at.up, forward: at.forward, height: SKATER_HEIGHT * self.size() })
+    }
+}
+
+/// The trick text the runtime's plain readout shows (an engine without a HUD of its own gives it).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct TrickText {
+    /// The trick in progress or just landed.
+    pub name: String,
+    /// The points it scored, if any.
+    pub points: String,
+    /// Score, combo, a new best.
+    pub line: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_focus_is_the_rider_or_else_the_board() {
+        let frame = |x: f32| Frame { position: Vec3::new(x, 0.0, 0.0), forward: Vec3::Z, up: Vec3::Y };
+        let mut link = SkaterLink { board: Some(frame(2.0)), ..Default::default() };
+        assert_eq!(link.focus().map(|f| f.feet.x), Some(2.0));
+        assert_eq!(link.focus().map(|f| f.height), Some(SKATER_HEIGHT));
+        link.rider = Some(frame(1.0));
+        link.size = 0.5;
+        let focus = link.focus().unwrap();
+        assert_eq!((focus.feet.x, focus.height, focus.forward), (1.0, SKATER_HEIGHT * 0.5, Vec3::Z));
+        assert_eq!(SkaterLink::default().focus(), None);
+    }
+
+    #[test]
+    fn a_park_piece_is_found_by_its_solid() {
+        let park = SkatePark {
+            pieces: vec![ParkPiece { solid: 3, rail_quads: 2..4, edges: vec![] }],
+            ..Default::default()
+        };
+        assert_eq!(park.piece(3).map(|p| p.rail_quads.clone()), Some(2..4));
+        assert!(park.piece(1).is_none());
+    }
+}

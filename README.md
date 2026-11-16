@@ -19,11 +19,13 @@ drawing. An engine runs one game's simulation on the player's own game files and
 
 ## What's here
 
-- `Mode`, `TouchState`, `HudHand`.
+- `Mode`, `TouchState`, `PadHeld`, `Control` (a controls-sheet row), `HudHand`, `Focus` (where the player is).
+- `stage`: the one space and unit; `Stage` (the room and placed solids), `Applied`, `Frame`, `PlacePlayer`.
+- `skate`: `SkatePark` (rails, edges, rail tubes over the stage), `SkaterLink` (rider and board), `TrickText`.
 - `hud`: `HudFrame` (vertices, draws, parts), `Placement` (by a controller, at the player), shading and blending
   that cover both THUG2's fixed-function 2D and Skate 3's Flash-style colour transforms.
 
-The rest (the engine trait, models and poses, audio, the stage, the skate mode's park and skater) arrives with the
+The rest (the engine trait, models and poses, audio) arrives with the
 runtime's steps that first use it; see its `docs/game-code-out-plan.md`.
 
 ## Using it
