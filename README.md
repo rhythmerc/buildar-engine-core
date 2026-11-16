@@ -1,6 +1,6 @@
-# engine-core
+# buildar-engine-core
 
-The contract between an AR runtime and the game engines it hosts, as plain Rust data with no Bevy.
+The contract between an AR runtime and the game engines it hosts, as plain Rust data with no Bevy (crate `engine-core`).
 
 The runtime is [skate3-quest-ar](https://github.com/rhythmerc/skate3-quest-ar), a Quest 3 app that brings game
 engines into stages built in your real room. It owns the room, the stages, the controllers, the menus and all
@@ -29,7 +29,11 @@ runtime's steps that first use it; see its `docs/game-code-out-plan.md`.
 ## Using it
 
 ```toml
-engine-core = { git = "https://github.com/rhythmerc/engine-core", rev = "<sha>" }
+engine-core = { git = "https://github.com/rhythmerc/buildar-engine-core", rev = "<sha>" }
 ```
 
 `glam` is pinned to the version Bevy 0.18.1 uses (`=0.30.10`), so a Bevy host passes vectors across unconverted.
+
+## Licence
+
+GPL-3.0, the same as the runtime (see `LICENSE`).
