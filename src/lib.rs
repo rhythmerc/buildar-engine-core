@@ -12,7 +12,8 @@
 //! What's here so far (the rest arrives with the steps that first use it; see the runtime's
 //! `docs/game-code-out-plan.md`):
 //! - [`Mode`]: the kinds of game.
-//! - [`TouchState`]: the controllers, as the runtime reads them.
+//! - [`TouchState`]: the controllers, as the runtime reads them; [`PadHeld`]: whether the runtime has them. Each
+//!   engine maps them to its own game's pad, and lists what does what as [`Control`]s.
 //! - [`Focus`]: where the player is, for the runtime to follow.
 //! - [`hud`]: an engine's HUD as draw lists, its parts and where the runtime puts them.
 pub mod hud;
@@ -21,6 +22,7 @@ pub mod skate;
 pub use glam;
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 
 /// A kind of game, and so the kind of stage it's played on and built with.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -67,6 +69,30 @@ pub struct TouchState {
     pub left_stick_click: bool,
     pub right_stick_click: bool,
     pub menu: bool,
+}
+
+/// Whether the runtime has the controllers this frame, beside the [`TouchState`] read from them.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PadHeld {
+    /// The runtime's (a menu open, building, aiming where to put the player): the engine's pad is neutral.
+    pub held: bool,
+    /// The player is busy elsewhere (a menu open, building): the engine may pause its game.
+    pub pause: bool,
+}
+
+/// One row of an engine's controls sheet: what to press, and what it does in the game. The runtime lists its own
+/// rows (its menu, placing the player) after the engine's.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Control {
+    /// The Touch controls, as the player reads them ("Right stick", "A / B").
+    pub input: Cow<'static, str>,
+    pub action: Cow<'static, str>,
+}
+
+impl Control {
+    pub const fn new(input: &'static str, action: &'static str) -> Self {
+        Self { input: Cow::Borrowed(input), action: Cow::Borrowed(action) }
+    }
 }
 
 /// Where the player is in the room and how big it's drawn: what the runtime follows (what's placed at the player, and
