@@ -13,11 +13,13 @@
 //! `docs/game-code-out-plan.md`):
 //! - [`Mode`]: the kinds of game.
 //! - [`TouchState`]: the controllers, as the runtime reads them.
+//! - [`Focus`]: where the player is, for the runtime to follow.
 //! - [`hud`]: an engine's HUD as draw lists, its parts and where the runtime puts them.
 pub mod hud;
 pub mod skate;
 
 pub use glam;
+use glam::Vec3;
 use serde::{Deserialize, Serialize};
 
 /// A kind of game, and so the kind of stage it's played on and built with.
@@ -67,6 +69,25 @@ pub struct TouchState {
     pub menu: bool,
 }
 
+/// Where the player is in the room and how big it's drawn: what the runtime follows (what's placed at the player, and
+/// later its contact shadow, its sounds, the menus' distance checks). In the runtime's world units (the room's frame).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Focus {
+    /// The point it stands on.
+    pub feet: Vec3,
+    /// Its up (a unit vector): along it from `feet` to the top of it.
+    pub up: Vec3,
+    /// How tall it is drawn, world units.
+    pub height: f32,
+}
+
+impl Focus {
+    /// Its middle: halfway up it.
+    pub fn middle(&self) -> Vec3 {
+        self.feet + self.up * (self.height * 0.5)
+    }
+}
+
 /// A controller, for what's placed by one.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -87,6 +108,12 @@ mod tests {
         }
         assert_eq!(Mode::from_key(" skate\n"), Some(Mode::Skate));
         assert_eq!(Mode::from_key("race"), None);
+    }
+
+    #[test]
+    fn a_focus_middle_is_halfway_up() {
+        let focus = Focus { feet: Vec3::new(1.0, 0.0, 2.0), up: Vec3::Y, height: 1.8 };
+        assert_eq!(focus.middle(), Vec3::new(1.0, 0.9, 2.0));
     }
 
     #[test]

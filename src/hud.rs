@@ -88,9 +88,9 @@ pub enum Placement {
         /// one): offset and anchor.
         on_left: Option<(Vec2, Vec2)>,
     },
-    /// At the player in the room, turned to the eyes: above them or beside them. As wide as `width_per_height` of the
-    /// player's drawn height, and never narrower than `least_view_share` of its distance from the eyes (so it reads
-    /// from across the room).
+    /// At the player in the room (its [`crate::Focus`]), turned to the eyes: above them or beside them. As wide as
+    /// `width_per_height` of the player's drawn height, and never narrower than `least_view_share` of its distance
+    /// from the eyes (so it reads from across the room).
     AtPlayer { side: Side, width_per_height: f32, least_view_share: f32 },
 }
 
