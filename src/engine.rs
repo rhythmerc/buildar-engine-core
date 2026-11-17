@@ -76,6 +76,10 @@ pub trait EngineCore: Send {
         None
     }
 
+    /// One of its settings, by its key (what they are is the engine's; the runtime keeps the player's choices and gives
+    /// them again each time the engine is made). A key it doesn't know is ignored.
+    fn set_setting(&mut self, _key: &str, _value: f32) {}
+
     /// The skate mode's part, for an engine of that mode.
     fn skate(&mut self) -> Option<&mut dyn crate::skate::SkateMode> {
         None
