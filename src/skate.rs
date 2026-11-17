@@ -5,6 +5,8 @@
 //! - [`SkaterLink`]: the rider and the board, each its own frame (they part: walking, bails, a board left behind);
 //!   [`SkaterLink::focus`] is skating's mapping onto the core [`Focus`].
 //! - [`TrickText`]: the trick being done and its points, for the runtime's plain readout when the engine draws no HUD.
+//! - [`body`]: a skater model's body groups ([`crate::model::BodyGroup`]): the rider and the board, and the board's
+//!   contact shadow ([`body::BOARD_FOOTPRINT`]).
 //!
 //! Placing the skater is the core's [`PlacePlayer`](crate::PlacePlayer): a skating engine puts it on its board there.
 //!
@@ -13,6 +15,26 @@
 use crate::{Focus, Frame};
 use glam::Vec3;
 use std::ops::Range;
+
+/// A skater model's body groups ([`crate::model::BodyGroup`]): the rider and the board move apart (walking, bails, a
+/// board left behind), and each casts its own contact shadow.
+pub mod body {
+    use super::SKATER_HEIGHT;
+    use crate::model::{Ellipse, GroupId};
+
+    /// The rider: cast from its bones ([`crate::model::Cast::Segments`]).
+    pub const RIDER: GroupId = 0;
+    /// The board: cast as [`BOARD_FOOTPRINT`] along it, tail to nose.
+    pub const BOARD: GroupId = 1;
+
+    /// The board's contact shadow: the deck, then its two trucks (smaller and darker, where the wheels meet the
+    /// ground), laid along it from its middle. Life-size metres (a deck about 0.8 m long) in skater heights.
+    pub const BOARD_FOOTPRINT: [Ellipse; 3] = [
+        Ellipse { along: 0.0, half_length: 0.42 / SKATER_HEIGHT, half_width: 0.14 / SKATER_HEIGHT, dark: 0.65 },
+        Ellipse { along: 0.25 / SKATER_HEIGHT, half_length: 0.1 / SKATER_HEIGHT, half_width: 0.12 / SKATER_HEIGHT, dark: 0.55 },
+        Ellipse { along: -0.25 / SKATER_HEIGHT, half_length: 0.1 / SKATER_HEIGHT, half_width: 0.12 / SKATER_HEIGHT, dark: 0.55 },
+    ];
+}
 
 /// How tall a skater is at life size, metres.
 pub const SKATER_HEIGHT: f32 = 1.8;
