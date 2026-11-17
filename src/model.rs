@@ -4,12 +4,21 @@
 //! An engine describes each model once ([`Model`]): where its look comes from ([`ModelSource`]: a glTF file, or meshes
 //! and textures as data with plain [`MaterialDesc`]s the runtime's own lighting draws), the shape of its skeleton, and
 //! the bodies it is made of that can move apart ([`BodyGroup`]s). Then, after each of its steps, it gives the model's
-//! [`Pose`]: where the model is and each joint's matrix. The runtime binds the source to the joints, carries the pose
-//! between steps (the headset draws faster than an engine steps) and casts each body's shadow.
+//! [`Pose`]: which model it is ([`ModelId`]), where the model is and each joint's matrix, and when its step was
+//! ([`Step`]). The runtime binds the source to the joints, carries the pose between steps (the headset draws faster
+//! than an engine steps) and casts each body's shadow.
+//!
+//! **Between steps.** For each model the runtime keeps the last two poses it was given (each taken once, by
+//! `generation`) and draws between them, [`Step::alpha`] of the way from the older to the newer: the time since the
+//! newer one's step, in its periods, on the clock the runtime steps the engine by. So an engine that steps at a fixed
+//! rate moves smoothly however fast the headset draws, with nothing to do but number its poses, say when its step was
+//! and how long it is, and flag a cut. Nothing is drawn between two poses across a `discontinuity`, a change of the
+//! period, or of the joint count: the newer one is drawn as it is.
 //!
 //! Everything is in the core's one space and unit ([`crate::stage`]).
 use crate::hud::Rgba8;
 use glam::{Mat4, Vec3};
+use std::time::Duration;
 
 /// A model an engine draws, described once.
 #[derive(Clone, Debug, PartialEq)]
@@ -103,13 +112,22 @@ pub enum Lighting {
     Unlit,
 }
 
+/// Which of an engine's models a pose is of: its own numbering (an engine with one model: 0). The runtime keeps each
+/// model's poses apart, and forgets a model that a step leaves out.
+pub type ModelId = u32;
+
 /// A model's pose after an engine's step.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Pose {
-    /// Changes with each new pose (the runtime takes a pose once).
+    /// The model it is of.
+    pub model: ModelId,
+    /// Changes with each new pose of the model (the runtime takes a pose once; a pose given again with the same
+    /// generation is ignored, whatever else it says).
     pub generation: u64,
-    /// Not to be blended from the one before (a cut: put down somewhere else, a teleport).
+    /// Not to be blended from the one before (a cut: put down somewhere else, a teleport, a change of size).
     pub discontinuity: bool,
+    /// The step that made it: when, and how long until the next ([`Step`]).
+    pub step: Step,
     /// The model's space in the world.
     pub root: Mat4,
     /// Each joint's matrix in the model's space (what that means for each source: [`ModelSource`]).
@@ -121,6 +139,32 @@ impl Pose {
     pub fn point(&self, point: Point) -> Option<Vec3> {
         let joint = self.joints.get(usize::from(point.joint))?;
         Some(self.root.transform_point3(joint.transform_point3(point.at)))
+    }
+}
+
+/// When an engine's step was, on the clock the runtime steps it by, and how long its steps are.
+///
+/// The runtime runs an engine's steps from a clock of its own (each step a `period` of it; the engine's own time, so a
+/// slowed or paused game's clock runs slow or stands still). A pose's step says where on that clock it was made; the
+/// runtime draws it between the pose before and itself by how far the clock has gone on since ([`Step::alpha`]).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub struct Step {
+    /// When the step ended: the clock's time when the pose was made (the steps' periods so far, summed).
+    pub at: Duration,
+    /// How long the engine's steps are from this one on: the time until its next step. The runtime doesn't blend
+    /// across a change of it.
+    pub period: Duration,
+}
+
+impl Step {
+    /// How far to draw from the pose before this step's to this one's, with the clock at `now`: the time since the
+    /// step in periods (0 at `at`, 1 a period later, past 1 while the next step is late; 0 before `at`; 1 with no
+    /// period). The runtime keeps it within 0..1.
+    pub fn alpha(&self, now: Duration) -> f32 {
+        if self.period.is_zero() {
+            return 1.0;
+        }
+        now.saturating_sub(self.at).as_secs_f32() / self.period.as_secs_f32()
     }
 }
 
@@ -180,5 +224,22 @@ mod tests {
         let p = pose.point(Point { joint: 1, at: Vec3::X }).unwrap();
         assert!((p - Vec3::new(10.0, 0.0, -1.0)).length() < 1e-6, "{p}");
         assert_eq!(pose.point(Point { joint: 2, at: Vec3::ZERO }), None);
+    }
+
+    /// The time since the step, in periods: the same sum as a fixed clock's leftover over its step.
+    #[test]
+    fn alpha_is_the_time_since_the_step_in_periods() {
+        let step = Step { at: Duration::from_millis(100), period: Duration::from_millis(20) };
+        assert_eq!(step.alpha(Duration::from_millis(100)), 0.0);
+        assert_eq!(step.alpha(Duration::from_millis(105)), 0.25);
+        assert_eq!(step.alpha(Duration::from_millis(130)), 1.5);
+        assert_eq!(step.alpha(Duration::from_millis(90)), 0.0);
+        let leftover = Duration::from_nanos(7_123_457);
+        let period = Duration::from_nanos(16_666_667);
+        assert_eq!(
+            Step { at: Duration::from_secs(3), period }.alpha(Duration::from_secs(3) + leftover).to_bits(),
+            (leftover.as_secs_f32() / period.as_secs_f32()).to_bits()
+        );
+        assert_eq!(Step::default().alpha(Duration::from_secs(1)), 1.0);
     }
 }

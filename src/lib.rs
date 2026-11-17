@@ -18,14 +18,15 @@
 //!   on it ([`PlacePlayer`]); it also says the one space and unit everything here is in.
 //! - [`Focus`]: where the player is, for the runtime to follow.
 //! - [`hud`]: an engine's HUD as draw lists, its parts and where the runtime puts them.
-//! - [`model`]: an engine's models ([`Model`]: a glTF file, or meshes and plain materials), their poses ([`Pose`]) and
-//!   the bodies they're made of, each casting its own contact shadow.
+//! - [`model`]: an engine's models ([`Model`]: a glTF file, or meshes and plain materials), their poses ([`Pose`]), when
+//!   each was made ([`Step`]: the runtime draws between a model's last two) and the bodies they're made of, each
+//!   casting its own contact shadow.
 pub mod hud;
 pub mod model;
 pub mod skate;
 pub mod stage;
 
-pub use model::{Model, ModelSource, Pose};
+pub use model::{Model, ModelId, ModelSource, Pose, Step};
 
 pub use stage::{Applied, Frame, PlacePlayer, Solid, Stage};
 
