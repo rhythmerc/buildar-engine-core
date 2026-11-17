@@ -21,6 +21,9 @@
 //! - [`model`]: an engine's models ([`Model`]: a glTF file, or meshes and plain materials), their poses ([`Pose`]), when
 //!   each was made ([`Step`]: the runtime draws between a model's last two) and the bodies they're made of, each
 //!   casting its own contact shadow.
+//! - [`audio`]: an engine's sound: the clips it plays as voices, each from its place ([`audio::Voice`]), or its own mix
+//!   as a stream rendered on the runtime's thread ([`audio::Stream`]).
+pub mod audio;
 pub mod hud;
 pub mod model;
 pub mod skate;

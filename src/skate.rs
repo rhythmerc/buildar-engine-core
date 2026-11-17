@@ -5,6 +5,7 @@
 //! - [`SkaterLink`]: the rider and the board, each its own frame (they part: walking, bails, a board left behind);
 //!   [`SkaterLink::focus`] is skating's mapping onto the core [`Focus`].
 //! - [`TrickText`]: the trick being done and its points, for the runtime's plain readout when the engine draws no HUD.
+//! - [`sound`]: what the skater did, for the skating sounds the runtime carries when the engine has none.
 //! - [`body`]: a skater model's body groups ([`crate::model::BodyGroup`]): the rider and the board, and the board's
 //!   contact shadow ([`body::BOARD_FOOTPRINT`]).
 //!
@@ -111,6 +112,55 @@ pub struct TrickText {
     pub points: String,
     /// Score, combo, a new best.
     pub line: String,
+}
+
+/// What a skating engine's steps did, for the skating sounds the runtime carries (recordings of wheels, pops and
+/// landings) when the engine has no sound of its own. The runtime picks the recordings, their levels and timing.
+pub mod sound {
+    use glam::Vec3;
+
+    /// Something heard once.
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    pub enum Cue {
+        /// Off the ground or a rail, by the skater's own doing.
+        Pop,
+        /// A flip trick started: the board's whoosh now, its catch a moment later if still in the air.
+        Flip,
+        /// Touchdown, with the speed into the surface (m/s; either sign).
+        Land { impact: f32 },
+        /// A push off the ground.
+        Push,
+        /// A step on foot, 0 to 1.
+        Footstep { strength: f32 },
+        Bail,
+        /// Points banked, a multiplier up.
+        Chime,
+    }
+
+    /// What's under the wheels.
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+    pub enum Rolling {
+        /// Nothing: in the air, on foot, bailing.
+        #[default]
+        None,
+        Ground,
+        Grind,
+    }
+
+    /// The skater's sounds: the cues since the runtime last took them, in order, and how it is now.
+    #[derive(Clone, Debug, Default, PartialEq)]
+    pub struct SkateSounds {
+        /// Where the sounds come from (the core's space).
+        pub at: Vec3,
+        /// The board's speed, m/s.
+        pub speed: f32,
+        pub rolling: Rolling,
+        /// Sliding sideways on its wheels (on the ground).
+        pub powersliding: bool,
+        /// In the air: a flip's catch is heard only while it is.
+        pub airborne: bool,
+        pub cues: Vec<Cue>,
+    }
 }
 
 #[cfg(test)]
