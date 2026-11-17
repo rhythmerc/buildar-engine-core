@@ -66,7 +66,7 @@ pub trait EngineCore: Send {
     /// Whether its HUD is seen, before the frame's steps (a game may only draw it then).
     fn want_hud(&mut self, _wanted: bool) {}
 
-    /// Its HUD after the frame's steps; false: it has none.
+    /// Its HUD after the frame's steps, into `out`: true when it is to be drawn again (false: unchanged, or none).
     fn hud(&mut self, _out: &mut HudFrame) -> bool {
         false
     }
