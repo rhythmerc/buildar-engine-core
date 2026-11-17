@@ -5,6 +5,7 @@
 //! - [`SkaterLink`]: the rider and the board, each its own frame (they part: walking, bails, a board left behind);
 //!   [`SkaterLink::focus`] is skating's mapping onto the core [`Focus`].
 //! - [`TrickText`]: the trick being done and its points, for the runtime's plain readout when the engine draws no HUD.
+//! - [`SkateMode`]: a skating engine's part of [`crate::EngineCore`].
 //! - [`sound`]: what the skater did, for the skating sounds the runtime carries when the engine has none.
 //! - [`body`]: a skater model's body groups ([`crate::model::BodyGroup`]): the rider and the board, and the board's
 //!   contact shadow ([`body::BOARD_FOOTPRINT`]).
@@ -112,6 +113,24 @@ pub struct TrickText {
     pub points: String,
     /// Score, combo, a new best.
     pub line: String,
+}
+
+/// A skating engine's part of [`crate::EngineCore`] ([`crate::EngineCore::skate`]).
+pub trait SkateMode {
+    /// The park over the stage of the same revision: kept until [`crate::EngineCore::set_stage`] brings that stage,
+    /// and taken with it (the runtime offers the park first, every frame).
+    fn set_park(&mut self, park: &SkatePark) -> crate::Applied;
+    /// Where the rider and the board are after the last step: none while not in the runtime's world.
+    fn link(&self) -> Option<SkaterLink>;
+    /// The plain trick readout, for an engine with no HUD of its own.
+    fn trick(&self) -> Option<TrickText> {
+        None
+    }
+    /// What the skater did since the last ask, for the skating sounds the runtime carries: an engine with no sound of
+    /// its own.
+    fn sounds(&mut self) -> Option<sound::SkateSounds> {
+        None
+    }
 }
 
 /// What a skating engine's steps did, for the skating sounds the runtime carries (recordings of wheels, pops and
