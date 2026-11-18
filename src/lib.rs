@@ -49,14 +49,17 @@ use std::borrow::Cow;
 pub enum Mode {
     /// Skating ([`skate`]).
     Skate,
+    /// Racing: driving round a course (free driving for now; its own module when it needs one).
+    Race,
 }
 
 impl Mode {
-    pub const ALL: [Mode; 1] = [Mode::Skate];
+    pub const ALL: [Mode; 2] = [Mode::Skate, Mode::Race];
 
     pub fn name(self) -> &'static str {
         match self {
             Mode::Skate => "Skate",
+            Mode::Race => "Race",
         }
     }
 
@@ -64,6 +67,7 @@ impl Mode {
     pub fn key(self) -> &'static str {
         match self {
             Mode::Skate => "skate",
+            Mode::Race => "race",
         }
     }
 
@@ -156,7 +160,8 @@ mod tests {
             assert_eq!(Mode::from_key(mode.key()), Some(mode));
         }
         assert_eq!(Mode::from_key(" skate\n"), Some(Mode::Skate));
-        assert_eq!(Mode::from_key("race"), None);
+        assert_eq!(Mode::from_key("race"), Some(Mode::Race));
+        assert_eq!(Mode::from_key("fly"), None);
     }
 
     #[test]
