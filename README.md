@@ -2,7 +2,7 @@
 
 The contract between an AR runtime and the game engines it hosts, as plain Rust data with no Bevy (crate `engine-core`).
 
-The runtime is [skate3-quest-ar](https://github.com/rhythmerc/skate3-quest-ar), a Quest 3 app that brings game
+The runtime is [buildAR](https://github.com/rhythmerc/buildar), a Quest 3 app that brings game
 engines into stages built in your real room. It owns the room, the stages, the controllers, the menus and all
 drawing. An engine runs one game's simulation on the player's own game files and hands back what to draw and play:
 [skate3-headless](https://github.com/rhythmerc/skate3-headless) (Skate 3) and
