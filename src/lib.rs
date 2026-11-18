@@ -24,13 +24,16 @@
 //! - [`EngineCore`]: an engine as the runtime drives it, made on a worker by its [`EngineFactory`].
 //! - [`audio`]: an engine's sound: the clips it plays as voices, each from its place ([`audio::Voice`]), or its own mix
 //!   as a stream rendered on the runtime's thread ([`audio::Stream`]).
+//! - [`data`]: the game files an engine runs on, as the runtime's installer finds and keeps them ([`GameFiles`]).
 pub mod audio;
+pub mod data;
 pub mod engine;
 pub mod hud;
 pub mod model;
 pub mod skate;
 pub mod stage;
 
+pub use data::GameFiles;
 pub use engine::{EngineCore, EngineFactory};
 pub use model::{Model, ModelId, ModelSource, Pose, Step};
 
