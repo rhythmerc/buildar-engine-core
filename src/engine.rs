@@ -33,6 +33,13 @@ pub trait EngineCore: Send {
     /// Put the player down there (now, or with the stage it takes next).
     fn place_player(&mut self, place: PlacePlayer);
 
+    /// Whether its player can be put in the runtime's world now. A game still loading after it is made (a race that
+    /// loads on its own thread) says no until it can take one; the runtime asks each frame, and tells the player to
+    /// place theirs once it says yes.
+    fn ready_to_place(&self) -> bool {
+        true
+    }
+
     /// Whether it steps now: a game may wait (for a stage of the runtime's to be in).
     fn wants_steps(&self) -> bool {
         true
