@@ -27,6 +27,11 @@ pub trait EngineCore: Send {
     /// relative to its camera.
     fn set_view(&mut self, _eyes: Option<[glam::Vec3; 3]>) {}
 
+    /// How many of the stage's metres a real metre is (the player's world scale: the room shown bigger to the game,
+    /// or smaller), offered every frame. An engine that judges real-world sizes, such as a scan's noise or a
+    /// tolerance in real centimetres, uses it to turn them into the stage's; most need nothing from it.
+    fn set_world_scale(&mut self, _stage_metres_per_real: f32) {}
+
     /// The latest stage, offered every frame: taken now, or later when the game can ([`Applied::Deferred`]).
     fn set_stage(&mut self, stage: &Stage) -> Applied;
 
