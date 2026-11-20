@@ -33,6 +33,13 @@ pub trait EngineCore: Send {
     /// Put the player down there (now, or with the stage it takes next).
     fn place_player(&mut self, place: PlacePlayer);
 
+    /// The most triangles (counted as [`Stage::triangles`]) its game's collision can take, if it has a limit: the
+    /// runtime offers it the stage [within](Stage::within) that many, the scanned mesh farthest from its player left
+    /// out.
+    fn stage_triangles_most(&self) -> Option<usize> {
+        None
+    }
+
     /// Whether its player can be put in the runtime's world now. A game still loading after it is made (a race that
     /// loads on its own thread) says no until it can take one; the runtime asks each frame, and tells the player to
     /// place theirs once it says yes.

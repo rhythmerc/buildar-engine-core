@@ -44,6 +44,28 @@ impl Stage {
     pub fn solid(&self, id: u64) -> Option<&Solid> {
         self.solids.iter().find(|s| s.id == id)
     }
+
+    /// It within `most` triangles (counted as [`Self::triangles`]), for an engine that can take no more
+    /// ([`crate::EngineCore::stage_triangles_most`]): the room's flat faces and the placed objects all kept, its other
+    /// faces (the scanned mesh) nearest `near` kept as far as they fit, the farthest left out. As it is when it fits.
+    pub fn within(&self, most: usize, near: Vec3) -> Stage {
+        let kept = self.room_quads.len() * 2 + self.solids.iter().map(|s| s.quads.len() * 2).sum::<usize>();
+        let room = most.saturating_sub(kept);
+        if self.room_triangles.len() <= room {
+            return self.clone();
+        }
+        let mut by_distance: Vec<&[Vec3; 3]> = self.room_triangles.iter().collect();
+        by_distance.sort_by(|a, b| {
+            let d = |t: &[Vec3; 3]| ((t[0] + t[1] + t[2]) / 3.0).distance_squared(near);
+            d(a).total_cmp(&d(b))
+        });
+        Stage {
+            revision: self.revision,
+            room_quads: self.room_quads.clone(),
+            room_triangles: by_distance.into_iter().take(room).copied().collect(),
+            solids: self.solids.clone(),
+        }
+    }
 }
 
 /// A quad's two triangles: (0, 1, 2) and (0, 2, 3).
@@ -80,6 +102,28 @@ pub struct PlacePlayer {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn a_stage_within_a_limit_keeps_its_flat_faces_and_its_nearest_mesh() {
+        let quad = [Vec3::ZERO, Vec3::X, Vec3::new(1.0, 0.0, 1.0), Vec3::Z];
+        let tri = |x: f32| [Vec3::new(x, 0.0, 0.0), Vec3::new(x + 0.1, 0.0, 0.0), Vec3::new(x, 0.1, 0.0)];
+        let stage = Stage {
+            revision: 3,
+            room_quads: vec![quad],
+            room_triangles: (0..10).map(|i| tri(i as f32)).collect(),
+            solids: vec![Solid { id: 1, quads: vec![quad] }],
+        };
+        assert_eq!(stage.within(100, Vec3::ZERO), stage, "as it is when it fits");
+        // (4 for the flat faces, 3 of the mesh: the three nearest x = 9)
+        let within = stage.within(7, Vec3::new(9.0, 0.0, 0.0));
+        assert_eq!(within.triangles().count(), 7);
+        assert_eq!((within.room_quads.len(), within.solids.len(), within.revision), (1, 1, 3));
+        let mut xs: Vec<f32> = within.room_triangles.iter().map(|t| t[0].x).collect();
+        xs.sort_by(f32::total_cmp);
+        assert_eq!(xs, [7.0, 8.0, 9.0]);
+        assert!(stage.within(2, Vec3::ZERO).room_triangles.is_empty(), "the flat faces kept even past the limit");
+    }
+
     use super::*;
 
     #[test]
