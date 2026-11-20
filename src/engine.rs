@@ -13,6 +13,15 @@ use crate::{Focus, PadHeld, TouchState};
 use std::time::Duration;
 
 /// Makes an engine on a worker thread (slow work, such as loading the game's files, happens here).
+/// What the runtime knows of an engine before one is made: each engine crate exports one (as `INFO`), and the
+/// runtime registers it with the engine.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct EngineInfo {
+    /// How many of its game's metres a real metre is at the player's x1.0 size: the size its player looks right at in a
+    /// room (a skater a few hand-spans tall, a kart toy-sized). The player sizes a course up or down from it.
+    pub natural_scale: f32,
+}
+
 pub type EngineFactory = Box<dyn FnOnce() -> Result<Box<dyn EngineCore>, String> + Send>;
 
 /// One game's simulation, hosted by the runtime. Each mode adds its own part ([`EngineCore::skate`]).

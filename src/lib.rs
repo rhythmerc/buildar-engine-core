@@ -34,7 +34,7 @@ pub mod skate;
 pub mod stage;
 
 pub use data::GameFiles;
-pub use engine::{EngineCore, EngineFactory};
+pub use engine::{EngineCore, EngineFactory, EngineInfo};
 pub use model::{Model, ModelId, ModelSource, Pose, Step};
 
 pub use stage::{Applied, Frame, PlacePlayer, Solid, Stage};
